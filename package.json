@@ -1,0 +1,29 @@
+{
+  "name": "health-tracker",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Personal health tracker — calorie/macro diary and weight log",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "tsc -b && npm run build -w @health-tracker/web",
+    "clean": "tsc -b --clean && npm run clean -w @health-tracker/web --if-present",
+    "dev": "concurrently -n api,web -c teal,cyan \"npm run dev -w @health-tracker/api\" \"npm run dev -w @health-tracker/web\"",
+    "dev:api": "npm run dev -w @health-tracker/api",
+    "dev:web": "npm run dev -w @health-tracker/web",
+    "start": "npm run start -w @health-tracker/api",
+    "migrate": "npm run migrate -w @health-tracker/api",
+    "test": "npm run test -w @health-tracker/api",
+    "typecheck": "tsc -b && npm run typecheck -w @health-tracker/web"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.4",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=20.11"
+  }
+}
