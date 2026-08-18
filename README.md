@@ -84,3 +84,35 @@ A meal, by contrast, is a live template: its nutrition always reflects the curre
 ## Stack
 
 Fastify 5, TypeScript, SQLite through Drizzle ORM and `better-sqlite3`, Zod for validation via `fastify-type-provider-zod`, `@fastify/swagger` for the OpenAPI document, Vitest for tests. The frontend is React + Vite with React Router, Recharts for the weight chart, and Tailwind CSS.
+
+## Production deployment
+
+The app runs on AWS: the API is a Lambda container function with SQLite on EFS, and the frontend is a static SPA on S3 behind CloudFront. CloudFront routes `/api/*`, `/docs`, and `/health` to API Gateway → Lambda; everything else is served from S3.
+
+```bash
+# Prerequisites: AWS CLI configured, Docker, OpenTofu/Terraform, Node 20+
+./infra/scripts/deploy.sh
+```
+
+The deploy script bootstraps infrastructure on first run (ECR, then the full stack), builds and pushes the Lambda image, syncs the frontend to S3, and invalidates CloudFront.
+
+To manage infrastructure directly:
+
+```bash
+cd infra
+tofu init
+tofu apply          # create or update AWS resources
+tofu destroy        # tear everything down (EFS data is lost)
+```
+
+| Output | Purpose |
+|--------|---------|
+| `app_url` | HTTPS URL (CloudFront) |
+| `ecr_repository_url` | Lambda container registry |
+| `web_bucket` | S3 bucket for frontend assets |
+| `efs_file_system_id` | Persistent SQLite storage |
+
+Backups: copy the SQLite file from EFS (e.g. mount the file system from a one-off EC2 instance, or use AWS Backup).
+
+Local Docker Compose (`docker compose up`) still works for offline testing but is not used in production.
+

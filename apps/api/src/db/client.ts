@@ -26,6 +26,12 @@ export type DatabaseHandle = {
   close: () => void;
 };
 
+function isNetworkFilesystem(databaseUrl: string): boolean {
+  if (databaseUrl === ':memory:') return false;
+  // EFS and other NFS mounts — WAL needs shared memory SQLite can't use on NFS.
+  return path.resolve(databaseUrl).startsWith('/mnt/');
+}
+
 export function createDatabase(databaseUrl: string): DatabaseHandle {
   if (databaseUrl !== ':memory:') {
     fs.mkdirSync(path.dirname(path.resolve(databaseUrl)), { recursive: true });
@@ -33,7 +39,12 @@ export function createDatabase(databaseUrl: string): DatabaseHandle {
 
   const sqlite = new BetterSqlite3(databaseUrl);
   if (databaseUrl !== ':memory:') {
-    sqlite.pragma('journal_mode = WAL');
+    sqlite.pragma('busy_timeout = 5000');
+    if (isNetworkFilesystem(databaseUrl)) {
+      sqlite.pragma('journal_mode = DELETE');
+    } else {
+      sqlite.pragma('journal_mode = WAL');
+    }
   }
   // Without this SQLite ignores the RESTRICT / SET NULL / CASCADE rules the design relies on.
   sqlite.pragma('foreign_keys = ON');

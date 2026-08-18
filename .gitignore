@@ -10,6 +10,8 @@ data/
 .env.local
 coverage/
 .DS_Store
+infra/components/lambda/pkg/
+infra/components/lambda/lambda.zip
 .terraform/
 *.tfstate
 *.tfstate.*

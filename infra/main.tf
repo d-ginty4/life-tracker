@@ -1,58 +1,47 @@
-locals {
-  availability_zone = var.availability_zone != "" ? var.availability_zone : "${var.aws_region}a"
-  ssh_cidrs         = length(var.ssh_cidrs) > 0 ? var.ssh_cidrs : var.allowed_cidrs
-}
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "6.58.0"
+    }
+  }
 
-resource "aws_lightsail_key_pair" "app" {
-  name       = "${var.project_name}-key"
-  public_key = var.ssh_public_key
-}
-
-resource "aws_lightsail_instance" "app" {
-  name              = var.project_name
-  availability_zone = local.availability_zone
-  blueprint_id      = var.blueprint_id
-  bundle_id         = var.bundle_id
-  key_pair_name     = aws_lightsail_key_pair.app.name
-  user_data         = templatefile("${path.module}/templates/user-data.sh.tpl", {
-    project_name = var.project_name
-  })
-
-  tags = {
-    Name = var.project_name
+  backend "s3" {
+    bucket       = "health-tracker-state-590184097018-eu-west-1-an"
+    key          = "terraform.tfstate"
+    region       = "eu-west-1"
+    use_lockfile = true
   }
 }
 
-resource "aws_lightsail_static_ip" "app" {
-  name = "${var.project_name}-ip"
+variable "profile" {
+  default = "AdministratorAccess-590184097018"
 }
 
-resource "aws_lightsail_static_ip_attachment" "app" {
-  static_ip_name = aws_lightsail_static_ip.app.name
-  instance_name  = aws_lightsail_instance.app.name
+variable "region" {
+  type    = string
+  default = "eu-west-1"
 }
 
-resource "aws_lightsail_instance_public_ports" "app" {
-  instance_name = aws_lightsail_instance.app.name
+variable "project_name" {
+  type    = string
+  default = "life-tracker"
+}
 
-  port_info {
-    protocol  = "tcp"
-    from_port = 22
-    to_port   = 22
-    cidrs     = local.ssh_cidrs
-  }
+provider "aws" {
+  region  = var.region
+  profile = var.profile
 
-  port_info {
-    protocol  = "tcp"
-    from_port = 80
-    to_port   = 80
-    cidrs     = var.allowed_cidrs
+  default_tags {
+    tags = {
+      Project = var.project_name
+    }
   }
+}
 
-  port_info {
-    protocol  = "tcp"
-    from_port = 443
-    to_port   = 443
-    cidrs     = var.allowed_cidrs
-  }
+module "components" {
+  source = "./components"
+
+  region       = var.region
+  project_name = var.project_name
 }

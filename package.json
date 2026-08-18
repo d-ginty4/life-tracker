@@ -17,7 +17,10 @@
     "start": "npm run start -w @health-tracker/api",
     "migrate": "npm run migrate -w @health-tracker/api",
     "test": "npm run test -w @health-tracker/api",
-    "typecheck": "tsc -b && npm run typecheck -w @health-tracker/web"
+    "typecheck": "tsc -b && npm run typecheck -w @health-tracker/web",
+    "build:lambda": "npm run build:lambda -w @health-tracker/api",
+    "deploy:frontend": "./infra/scripts/deploy-frontend.sh",
+    "deploy": "./infra/scripts/deploy.sh"
   },
   "devDependencies": {
     "concurrently": "^10.0.4",

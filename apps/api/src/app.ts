@@ -2,6 +2,7 @@ import cors from '@fastify/cors';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import Fastify, { type FastifyError, type FastifyInstance, type FastifyServerOptions } from 'fastify';
+import path from 'node:path';
 import {
   hasZodFastifySchemaValidationErrors,
   isResponseSerializationError,
@@ -70,6 +71,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   await app.register(swaggerUi, {
     routePrefix: '/docs',
     uiConfig: { docExpansion: 'list', deepLinking: true },
+    ...(process.env.LAMBDA_TASK_ROOT && {
+      baseDir: path.join(process.env.LAMBDA_TASK_ROOT, 'static'),
+    }),
   });
 
   app.setErrorHandler((error, request, reply) => {
